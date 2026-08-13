@@ -1,5 +1,7 @@
-// CUDA
-//   nvcc -O3 -arch=sm_89 GPU.cu
+// CUDA port of GPU.c + vanitysha_gpu.cl
+// RTX 4060 / Ada compile example:
+//   nvcc -O3 -arch=sm_89 vanitysha_cuda.cu -o vanitysha_cuda
+
 #include <cuda_runtime.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -411,7 +413,7 @@ int main(int argc, char **argv) {
                    count / secs / 1e6, iters, target_ms);
         }
 
-        if (now != (time_t)-1 && now - last_print >= 2) {
+        if (now != (time_t)-1 && now - last_print >= 1) {
             const double mh = window_seconds > 0 ? (double)window_hashes / window_seconds / 1e6 : 0;
             printf("\rnext=%" PRIu64 "  best=%u  %.1f MH/s      ", cp.next, cp.zeros, mh);
             fflush(stdout);
