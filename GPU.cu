@@ -1,7 +1,5 @@
-// CUDA port of GPU.c + vanitysha_gpu.cl
-// RTX 4060 / Ada compile example:
-//   nvcc -O3 -arch=sm_89 vanitysha_cuda.cu -o vanitysha_cuda
-
+// CUDA
+//   nvcc -O3 -arch=sm_89 GPU.cu
 #include <cuda_runtime.h>
 #include <errno.h>
 #include <inttypes.h>
