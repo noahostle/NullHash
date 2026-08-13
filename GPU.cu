@@ -1,6 +1,6 @@
-// CUDA port of GPU.c + vanitysha_gpu.cl
+// CUDA vanity SHA-256 search: hashes inputs of the form "noah ostle {<printable suffix>}"
 // RTX 4060 / Ada compile example:
-//   nvcc -O3 -arch=sm_89 vanitysha_cuda.cu -o vanitysha_cuda
+//   nvcc -O3 -arch=sm_89 GPU_braced.cu -o GPU
 
 #include <cuda_runtime.h>
 #include <errno.h>
@@ -18,7 +18,7 @@
 
 #define WG 256u
 #define BLOCKS_PER_SM 32u
-#define CP_MAGIC UINT64_C(0x4e47505532353631) /* "NGPU2561" -- same as OpenCL build */
+#define CP_MAGIC UINT64_C(0x4e47505542524331) /* "NGPUBRC1" -- braced-input build */
 #define CP_VERSION 1u
 
 typedef struct {
@@ -68,12 +68,13 @@ static void locate(uint64_t i, uint32_t *len, uint64_t *off, uint64_t *remaining
 static void candidate(uint64_t i, char out[32]) {
     uint32_t l; uint64_t x, rem;
     locate(i, &l, &x, &rem);
-    memcpy(out, "noah ostle", 10);
+    memcpy(out, "noah ostle {", 12);
     for (int p = (int)l - 1; p >= 0; --p) {
-        out[10 + p] = (char)(33 + x % 94);
+        out[12 + p] = (char)(33 + x % 94);
         x /= 94;
     }
-    out[10 + l] = 0;
+    out[12 + l] = '}';
+    out[13 + l] = 0;
 }
 
 static int load_checkpoint(const char *path, checkpoint_t *c) {
@@ -168,11 +169,11 @@ void search_kernel(unsigned long long abs0, unsigned long long off0, uint32_t L,
     unsigned long long bi = ~0ULL;
 
     if (rel < count) {
-        uint32_t m[6] = {0x6e6f6168U, 0x206f7374U, 0x6c650000U, 0, 0, 0}; /* "noah ostle" */
+        uint32_t m[6] = {0x6e6f6168U, 0x206f7374U, 0x6c65207bU, 0, 0, 0}; /* "noah ostle {" */
         unsigned long long x = off0 + rel;
 
         for (int p = (int)L - 1; p >= 0; --p) {
-            const uint32_t pos = 10U + (uint32_t)p;
+            const uint32_t pos = 12U + (uint32_t)p;
             const uint32_t sh = 24U - 8U * (pos & 3U);
             const uint32_t ch = 33U + (uint32_t)(x % 94ULL);
             x /= 94ULL;
@@ -180,12 +181,17 @@ void search_kernel(unsigned long long abs0, unsigned long long off0, uint32_t L,
         }
 
         {
-            const uint32_t pos = 10U + L;
+            const uint32_t pos = 12U + L;
+            const uint32_t sh = 24U - 8U * (pos & 3U);
+            m[pos >> 2] |= 0x7dU << sh; /* '}' */
+        }
+        {
+            const uint32_t pos = 13U + L;
             const uint32_t sh = 24U - 8U * (pos & 3U);
             m[pos >> 2] |= 0x80U << sh;
         }
 
-        const uint32_t bitlen = (10U + L) * 8U;
+        const uint32_t bitlen = (13U + L) * 8U;
         const unsigned long long left = count - rel;
         const uint32_t n = (uint32_t)(left < (unsigned long long)iters ? left : (unsigned long long)iters);
 
@@ -220,7 +226,7 @@ void search_kernel(unsigned long long abs0, unsigned long long off0, uint32_t L,
 
             if (j + 1U < n) {
                 for (int p = (int)L - 1; p >= 0; --p) {
-                    const uint32_t pos = 10U + (uint32_t)p;
+                    const uint32_t pos = 12U + (uint32_t)p;
                     const uint32_t wi = pos >> 2;
                     const uint32_t sh = 24U - 8U * (pos & 3U);
                     const uint32_t mask = 0xffU << sh;
@@ -267,7 +273,7 @@ void search_kernel(unsigned long long abs0, unsigned long long off0, uint32_t L,
 }
 
 int main(int argc, char **argv) {
-    const char *cp_path = "vanitysha_gpu.chk";
+    const char *cp_path = "vanitysha_braced.chk";
     uint64_t override_start = 0;
     int have_override = 0;
     unsigned device_index = 0;
