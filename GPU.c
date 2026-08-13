@@ -1,3 +1,4 @@
+//gcc -O3 -march=native GPU.c -lOpenCL
 #define CL_TARGET_OPENCL_VERSION 120
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
