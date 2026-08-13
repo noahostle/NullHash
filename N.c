@@ -1,3 +1,4 @@
+//gcc -O3 -march=native -fopenmp N.c -lcrypto
 #define P(x) _Pragma(#x)
 typedef struct{unsigned h[8],Nl,Nh                                                              ,data[16],num,md_len;}S;extern int I()__asm__ 
 ("SHA256""_Init"),H()__asm__("SHA256"                                                           "_Updat""e"),F()__asm__("SHA256""_Final"      
