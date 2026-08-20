@@ -1,3 +1,4 @@
+```text
 === STATUS ===
 SHARD  INSTANCE     STATUS     HASHRATE    BEST   RECORD
 0      47629218     running    7539.6 MH/s 13     NEW BEST: 13 leading hex zeros | index=1233126711904554 | noah ostle {3!Ls28|C}
